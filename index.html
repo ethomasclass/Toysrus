@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toys "R" Us 1996 — Walkthrough</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family: "Arial Black", Arial, Helvetica, sans-serif; }
+  canvas { display:block; }
+  #hud { position:fixed; inset:0; pointer-events:none; color:#fff; }
+  #crosshair { position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:#fff; opacity:.8; box-shadow:0 0 2px #000; }
+  #label { position:absolute; left:50%; bottom:18%; transform:translateX(-50%); background:rgba(0,0,0,.65); padding:8px 14px; border-radius:6px; font-family: Arial, sans-serif; font-size:15px; max-width:520px; text-align:center; display:none; line-height:1.35; }
+  #label b { color:#ffd400; }
+  #dept { position:absolute; left:16px; top:14px; font-size:22px; letter-spacing:1px; text-shadow:0 2px 4px #000; }
+  #dept small { display:block; font-family: Arial, sans-serif; font-size:12px; opacity:.8; letter-spacing:0; }
+  #overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.72); pointer-events:auto; cursor:pointer; }
+  #card { background:#fff; color:#111; border-radius:12px; padding:28px 34px; max-width:560px; font-family: Arial, sans-serif; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  #card h1 { margin:0 0 6px; font-family:"Arial Black", Arial, sans-serif; font-size:30px; }
+  #card h1 span:nth-child(1){color:#e3242b} #card h1 span:nth-child(2){color:#f7941d} #card h1 span:nth-child(3){color:#ffd400} #card h1 span:nth-child(4){color:#2bb24c} #card h1 span:nth-child(5){color:#1c75bc} #card h1 span:nth-child(6){color:#7f3f98}
+  #card h1 .r { display:inline-block; transform:scaleX(-1); color:#1c75bc; }
+  #card p { margin:8px 0; line-height:1.4; font-size:14px; }
+  #card kbd { background:#eee; border:1px solid #bbb; border-bottom-width:2px; border-radius:4px; padding:1px 6px; font-family:monospace; }
+  #card .go { margin-top:14px; display:inline-block; background:#1c75bc; color:#fff; padding:10px 18px; border-radius:6px; font-weight:bold; }
+  #minimap { position:absolute; right:14px; bottom:14px; width:260px; height:140px; background:rgba(255,255,255,.9); border:2px solid #333; border-radius:6px; display:none; }
+  #help { position:absolute; right:14px; top:14px; font-family: Arial, sans-serif; font-size:12px; opacity:.75; text-align:right; text-shadow:0 1px 2px #000; }
+  #touch { position:absolute; left:0; right:0; bottom:0; height:40%; display:none; pointer-events:auto; }
+  .stick { position:absolute; bottom:24px; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.5); }
+  #stickL { left:24px; } #stickR { right:24px; }
+  @media (pointer:coarse) { #touch { display:block; } }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="dept"></div>
+  <div id="help">WASD / arrows: walk · Shift: run · M: map · E: inspect · Esc: menu</div>
+  <div id="crosshair"></div>
+  <div id="label"></div>
+  <canvas id="minimap" width="520" height="280"></canvas>
+  <div id="touch"><div id="stickL" class="stick"></div><div id="stickR" class="stick"></div></div>
+</div>
+<div id="overlay">
+  <div id="card">
+    <h1><span>T</span><span>O</span><span>Y</span><span>S</span> <span class="r">R</span> <span>US</span></h1>
+    <p><b>Huntsville, Alabama · store #8809 · circa 1996.</b> A walkable recreation built from period floor-plan research, catalogs and ex-employee accounts. Start in the parking lot and walk in through the vestibule.</p>
+    <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>E</kbd> or click: inspect what you're looking at &nbsp; <kbd>M</kbd> store map &nbsp; <kbd>1</kbd>–<kbd>9</kbd> teleport to a department</p>
+    <p id="loading">Loading store…</p>
+    <span class="go">Click to enter the store</span>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
