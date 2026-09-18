@@ -50,7 +50,7 @@ addEventListener('keyup', e => { keys[e.code] = false; });
 // Pointer lock where available; otherwise fall back to click-and-drag looking.
 let dragMode = false, dragging = false, lastX = 0, lastY = 0;
 $('overlay').addEventListener('click', () => {
-  if (dragMode) { $('overlay').style.display = 'none'; return; }
+  if (dragMode || isTouch) { $('overlay').style.display = 'none'; return; }
   try { controls.lock(); } catch (e) { enableDrag(); }
   setTimeout(() => { if (!controls.isLocked && !touch.active) enableDrag(); }, 600);
 });
@@ -81,16 +81,48 @@ function onKey(e) {
 addEventListener('mousedown', () => { if (controls.isLocked) inspect(true); });
 addEventListener('click', () => { if (dragMode && $('overlay').style.display === 'none') inspect(true); });
 
-// ---------- touch controls (phones)
-const touch = { l: null, r: null, lx: 0, ly: 0, rx: 0, ry: 0 };
-function bindStick(el, which) {
-  let id = null, ox = 0, oy = 0;
-  el.addEventListener('touchstart', e => { const t = e.changedTouches[0]; id = t.identifier; ox = t.clientX; oy = t.clientY; e.preventDefault(); }, { passive: false });
-  el.addEventListener('touchmove', e => { for (const t of e.changedTouches) if (t.identifier === id) { touch[which + 'x'] = Math.max(-1, Math.min(1, (t.clientX - ox) / 40)); touch[which + 'y'] = Math.max(-1, Math.min(1, (t.clientY - oy) / 40)); } e.preventDefault(); }, { passive: false });
-  el.addEventListener('touchend', () => { id = null; touch[which + 'x'] = touch[which + 'y'] = 0; });
+// ---------- touch controls (phones): floating move stick on the left half, drag-to-look on the right half
+const touch = { active: false, lx: 0, ly: 0, run: false };
+const isTouch = matchMedia('(pointer:coarse)').matches;
+{
+  const area = $('touch'), stick = $('stick'), knob = $('knob');
+  let moveId = null, lookId = null, ox = 0, oy = 0, lookX = 0, lookY = 0, lookMoved = 0;
+  const R = 45;
+  area.addEventListener('touchstart', e => {
+    for (const t of e.changedTouches) {
+      if (t.target.closest && t.target.closest('.tbtn')) continue;
+      if (t.clientX < innerWidth / 2 && moveId === null) {
+        moveId = t.identifier; ox = t.clientX; oy = t.clientY;
+        stick.style.display = 'block'; stick.style.left = (ox - 60) + 'px'; stick.style.top = (oy - 60) + 'px'; knob.style.transform = '';
+      } else if (lookId === null) { lookId = t.identifier; lookX = t.clientX; lookY = t.clientY; lookMoved = 0; }
+    }
+    e.preventDefault();
+  }, { passive: false });
+  area.addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === moveId) {
+        let dx = t.clientX - ox, dy = t.clientY - oy; const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`; touch.lx = dx / R; touch.ly = dy / R;
+      } else if (t.identifier === lookId) {
+        const dx = t.clientX - lookX, dy = t.clientY - lookY; lookX = t.clientX; lookY = t.clientY; lookMoved += Math.abs(dx) + Math.abs(dy);
+        controls.getObject().rotation.y -= dx * 0.005; camera.rotation.x = Math.max(-1.3, Math.min(1.3, camera.rotation.x - dy * 0.005));
+      }
+    }
+    e.preventDefault();
+  }, { passive: false });
+  const end = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === moveId) { moveId = null; touch.lx = touch.ly = 0; stick.style.display = 'none'; }
+      if (t.identifier === lookId) { if (lookMoved < 8) inspect(true); lookId = null; }
+    }
+  };
+  area.addEventListener('touchend', end); area.addEventListener('touchcancel', end);
+  const btn = (id, fn) => $(id).addEventListener('touchstart', e => { e.stopPropagation(); e.preventDefault(); fn(); }, { passive: false });
+  btn('bRun', () => { touch.run = !touch.run; $('bRun').classList.toggle('on', touch.run); });
+  btn('bMap', () => { const m = $('minimap'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; $('bMap').classList.toggle('on', m.style.display === 'block'); });
+  btn('bLook', () => inspect(true));
+  if (isTouch) $('overlay').addEventListener('click', () => { $('overlay').style.display = 'none'; touch.active = true; });
 }
-bindStick($('stickL'), 'l'); bindStick($('stickR'), 'r');
-if (matchMedia('(pointer:coarse)').matches) { $('overlay').addEventListener('click', () => { $('overlay').style.display = 'none'; touch.active = true; }); }
 
 // ---------- movement with AABB collision
 const vel = new THREE.Vector3();
@@ -182,10 +214,9 @@ function tick() {
   const obj = controls.getObject();
   const active = controls.isLocked || touch.active || dragMode;
   if (active) {
-    const speed = (keys.ShiftLeft || keys.ShiftRight) ? PLAYER.run : PLAYER.walk;
+    const speed = (keys.ShiftLeft || keys.ShiftRight || touch.run) ? PLAYER.run : PLAYER.walk;
     const fwd = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - touch.ly;
     const side = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.lx;
-    if (touch.active) { obj.rotation.y -= touch.rx * 1.8 * dt; camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x - touch.ry * 1.2 * dt)); }
     const dir = new THREE.Vector3(); camera.getWorldDirection(dir); dir.y = 0; dir.normalize();
     const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
     vel.set(0, 0, 0).addScaledVector(dir, fwd).addScaledVector(right, side);
