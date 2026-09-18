@@ -47,9 +47,25 @@ camera.lookAt(start.x, PLAYER.eye, 0);
 const keys = {};
 addEventListener('keydown', e => { keys[e.code] = true; onKey(e); });
 addEventListener('keyup', e => { keys[e.code] = false; });
-$('overlay').addEventListener('click', () => controls.lock());
+// Pointer lock where available; otherwise fall back to click-and-drag looking.
+let dragMode = false, dragging = false, lastX = 0, lastY = 0;
+$('overlay').addEventListener('click', () => {
+  if (dragMode) { $('overlay').style.display = 'none'; return; }
+  try { controls.lock(); } catch (e) { enableDrag(); }
+  setTimeout(() => { if (!controls.isLocked && !touch.active) enableDrag(); }, 600);
+});
+function enableDrag() { dragMode = true; $('overlay').style.display = 'none'; $('help').textContent = 'WASD / arrows: walk · Shift: run · drag to look · M: map · E: inspect · Esc: menu'; }
+document.addEventListener('pointerlockerror', enableDrag);
 controls.addEventListener('lock', () => { $('overlay').style.display = 'none'; });
-controls.addEventListener('unlock', () => { $('overlay').style.display = 'flex'; });
+controls.addEventListener('unlock', () => { if (!dragMode) $('overlay').style.display = 'flex'; });
+renderer.domElement.addEventListener('mousedown', e => { if (dragMode) { dragging = true; lastX = e.clientX; lastY = e.clientY; } });
+addEventListener('mouseup', () => { dragging = false; });
+addEventListener('mousemove', e => {
+  if (!dragMode || !dragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
+  controls.getObject().rotation.y -= dx * 0.004; camera.rotation.x = Math.max(-1.3, Math.min(1.3, camera.rotation.x - dy * 0.004));
+});
+addEventListener('keydown', e => { if (e.code === 'Escape' && dragMode) $('overlay').style.display = 'flex'; });
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 function onKey(e) {
@@ -63,6 +79,7 @@ function onKey(e) {
   }
 }
 addEventListener('mousedown', () => { if (controls.isLocked) inspect(true); });
+addEventListener('click', () => { if (dragMode && $('overlay').style.display === 'none') inspect(true); });
 
 // ---------- touch controls (phones)
 const touch = { l: null, r: null, lx: 0, ly: 0, rx: 0, ry: 0 };
@@ -163,7 +180,7 @@ function tick() {
   requestAnimationFrame(tick);
   const dt = Math.min(clock.getDelta(), 0.05);
   const obj = controls.getObject();
-  const active = controls.isLocked || touch.active;
+  const active = controls.isLocked || touch.active || dragMode;
   if (active) {
     const speed = (keys.ShiftLeft || keys.ShiftRight) ? PLAYER.run : PLAYER.walk;
     const fwd = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - touch.ly;

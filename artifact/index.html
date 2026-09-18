@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
 <title>Toys R Us Huntsville 1996</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family: "Arial Black", Arial, Helvetica, sans-serif; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#0b1e3d; color-scheme: dark; font-family: "Arial Black", Arial, Helvetica, sans-serif; }
   canvas { display:block; }
   #hud { position:fixed; inset:0; pointer-events:none; color:#fff; }
   #crosshair { position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:#fff; opacity:.8; box-shadow:0 0 2px #000; }
@@ -28,8 +23,7 @@
   #stickL { left:24px; } #stickR { right:24px; }
   @media (pointer:coarse) { #touch { display:block; } }
 </style>
-</head>
-<body>
+
 <div id="hud">
   <div id="dept"></div>
   <div id="help">WASD / arrows: walk · Shift: run · M: map · E: inspect · Esc: menu</div>
@@ -54,5 +48,3 @@
 } }
 </script>
 <script type="module" src="./src/main.js"></script>
-</body>
-</html>
